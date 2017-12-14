@@ -7,6 +7,7 @@ var session = require('express-session');
 var mongoose = require('mongoose');
 var passport = require('passport');
 var User = require('./models/user')
+var Post = require('./models/post')
 
 
 // Conenct to DB
@@ -150,6 +151,50 @@ app.get('/auth/facebook/callback',
     res.redirect('/');
   }
 );
+
+
+const CanCan = require('cancan');
+const cancan = new CanCan();
+const {allow, can} = cancan;
+
+allow(User, ['view', 'edit'], Post, (user, post) => post.ownerId === user.id);
+
+app.get("/post/:id", function(req, res){
+  Post.find({}, function(err, all) {
+    console.log(all)
+  })
+  Post.findById(req.params.id, function(err, post){
+    console.log(err)
+    console.log(post)
+    console.log(req.user)
+    if (can(req.user, 'view', post)) {
+      res.send(JSON.stringify(post))
+    }else{
+      res.status(403).send("{errors: \"Unauthorized to view this post\"}").end()
+    }
+  });
+});
+
+
+
+// Just for testing as we don't have an interface to add posts
+app.get("/createDummies", function(req, res){
+  var newPost1 = new Post({
+    title: "Dimmie1",
+    ownerId: req.user.id,
+    body: "Dummie body for post"
+  });
+  newPost1.save()
+
+  var newPost2 = new Post({
+    title: "Dimmie2",
+    ownerId: req.user.id,
+    body: "Dummie body for post"
+  });
+  newPost2.save()
+
+  res.send(JSON.stringify([newPost1, newPost2]))
+})
 
 
 app.listen(3000, () => console.log('Example app listening on port 3000!'))
