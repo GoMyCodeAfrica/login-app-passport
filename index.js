@@ -159,14 +159,11 @@ const {allow, can} = cancan;
 
 allow(User, ['view', 'edit'], Post, (user, post) => post.ownerId === user.id);
 
-app.get("/post/:id", function(req, res){
+app.get("/posts/:id", function(req, res){
   Post.find({}, function(err, all) {
     console.log(all)
   })
   Post.findById(req.params.id, function(err, post){
-    console.log(err)
-    console.log(post)
-    console.log(req.user)
     if (can(req.user, 'view', post)) {
       res.send(JSON.stringify(post))
     }else{
